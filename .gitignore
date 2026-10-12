@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Records exported from the app (patient data: keep them out of the repository)
+neoapnea-*.csv
+neoapnea-*.json
+
+# OS
+.DS_Store
