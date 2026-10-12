@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="figure-size" content="1200x700">
+<link rel="stylesheet" href="/app/brand.css">
+<style>
+  html, body { margin: 0; background: transparent; }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .card { width: 1200px; height: 700px; background: var(--ink); border-radius: 28px; position: relative; overflow: hidden; }
+  .head { position: absolute; left: 48px; top: 40px; right: 48px; display: flex; justify-content: space-between; align-items: baseline; }
+  .eyebrow { font: 500 13px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 12px 0 0; font: 600 30px/1.1 var(--sans); letter-spacing: -0.03em; }
+  .note { font: 400 13px/1 var(--mono); color: var(--faint); }
+  svg { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <div><div class="eyebrow">How detection works</div><h1>From chest motion to an apnea record</h1></div>
+    <div class="note">Output of the monitor on the built-in simulator</div>
+  </div>
+  <svg id="fig" width="1200" height="700" viewBox="0 0 1200 700"></svg>
+</div>
+<script type="module">
+  import { points, record } from "./signals.js";
+  import { SETTINGS } from "/app/js/engine.js";
+
+  const { monitor, chest, frames } = record(80);
+  const e = monitor.episodes[0];
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { line: css("--line"), faint: css("--faint"), muted: css("--muted"), text: css("--text"), panel: css("--panel"),
+    breath: css("--breath"), pulse: css("--pulse"), spo2: css("--spo2"), warn: css("--warn"), alarm: css("--alarm") };
+
+  const t0 = e.start_s - 10, t1 = e.start_s + e.pause_s + 10;
+  const L = 270, R = 1152, W = R - L;
+  const X = (t) => L + ((t - t0) / (t1 - t0)) * W;
+  const lanes = {
+    chest: { y: 176, h: 124 },
+    state: { y: 324, h: 44 },
+    hr: { y: 404, h: 100 },
+    spo2: { y: 534, h: 96 },
+  };
+  const text = (x, y, s, { color = C.muted, size = 13, weight = 400, mono = false, anchor = "start", ls = 0 } = {}) =>
+    `<text x="${x}" y="${y}" fill="${color}" font-family="${mono ? "Geist Mono" : "Geist"}" font-size="${size}" font-weight="${weight}" text-anchor="${anchor}" letter-spacing="${ls}">${s}</text>`;
+  const laneTitle = (lane, title, color, rule) =>
+    `<rect x="48" y="${lane.y + 4}" width="8" height="8" rx="2" fill="${color}"/>` +
+    text(66, lane.y + 13, title, { color: C.text, size: 15, weight: 600 }) +
+    rule.map((r, i) => text(48, lane.y + 36 + i * 18, r, { size: 13 })).join("");
+  let svg = "";
+
+  // Time grid
+  for (let s = Math.ceil(t0 / 5) * 5; s <= t1; s += 5) {
+    svg += `<line x1="${X(s)}" y1="${lanes.chest.y}" x2="${X(s)}" y2="${lanes.spo2.y + lanes.spo2.h}" stroke="${C.line}" stroke-opacity="0.7"/>`;
+    svg += text(X(s), 660, `${s} s`, { mono: true, size: 12, color: C.faint, anchor: "middle" });
+  }
+
+  // 1. Chest motion and the breath threshold
+  const cv = chest.v.filter((_, i) => chest.t[i] >= t0 && chest.t[i] <= t1);
+  const clo = Math.min(...cv) - 300, chi = Math.max(...cv) + 300;
+  const Yc = (v) => lanes.chest.y + lanes.chest.h - ((v - clo) / (chi - clo)) * lanes.chest.h;
+  svg += laneTitle(lanes.chest, "Chest motion", C.breath, ["MPU-6050 z axis, raw counts.", "A sample above the threshold", "counts as a breath."]);
+  svg += `<line x1="${L}" y1="${Yc(SETTINGS.breathThreshold)}" x2="${R}" y2="${Yc(SETTINGS.breathThreshold)}" stroke="${C.muted}" stroke-dasharray="5 5"/>`;
+  // Label the threshold where the trace is flat, during the pause.
+  svg += text(X(e.start_s) + 12, Yc(SETTINGS.breathThreshold) - 8, `breath threshold · ${SETTINGS.breathThreshold} counts`, { mono: true, size: 12, color: C.muted });
+  svg += `<polyline points="${points(chest, t0, t1, clo, chi, L, lanes.chest.y, W, lanes.chest.h)}" fill="none" stroke="${C.breath}" stroke-width="2.2" stroke-linejoin="round"/>`;
+
+  // 2. Breathing alarm state, from the monitor's own state after every frame
+  svg += laneTitle(lanes.state, "Breathing alarm", C.text, ["Time since the last breath."]);
+  const fill = { ok: C.panel, warning: C.warn, apnea: C.alarm };
+  let run = null;
+  const runs = [];
+  for (const f of frames) {
+    if (f.t < t0 || f.t > t1) continue;
+    if (!run || run.state !== f.breathing) { run = { state: f.breathing, from: f.t, to: f.t }; runs.push(run); }
+    run.to = f.t;
+  }
+  for (const r of runs) svg += `<rect x="${X(r.from)}" y="${lanes.state.y}" width="${Math.max(1, X(r.to + 0.25) - X(r.from))}" height="${lanes.state.h}" fill="${fill[r.state]}" ${r.state === "ok" ? `stroke="${C.line}"` : ""}/>`;
+  const warnAt = e.start_s + SETTINGS.pauseWarningS, apneaAt = e.start_s + SETTINGS.pauseApneaS, endAt = e.start_s + e.pause_s;
+  svg += text(X(e.start_s) + 10, lanes.state.y + 27, "Last breath", { color: C.muted, size: 13 });
+  svg += text(X(warnAt) + 10, lanes.state.y + 27, `${SETTINGS.pauseWarningS} s · warning`, { color: "#1b1400", size: 14, weight: 600 });
+  svg += text(X(apneaAt) + 10, lanes.state.y + 27, `${SETTINGS.pauseApneaS} s · apnea`, { color: "#fff", size: 14, weight: 600 });
+  svg += text(X(endAt) + 10, lanes.state.y + 27, "Breathing resumes", { color: C.muted, size: 13 });
+
+  // The recorded episode
+  svg += `<rect x="${X(e.start_s)}" y="${lanes.chest.y - 20}" width="${X(endAt) - X(e.start_s)}" height="2" fill="${C.alarm}"/>`;
+  svg += `<line x1="${X(e.start_s)}" y1="${lanes.chest.y - 26}" x2="${X(e.start_s)}" y2="${lanes.chest.y - 14}" stroke="${C.alarm}" stroke-width="2"/>`;
+  svg += `<line x1="${X(endAt)}" y1="${lanes.chest.y - 26}" x2="${X(endAt)}" y2="${lanes.chest.y - 14}" stroke="${C.alarm}" stroke-width="2"/>`;
+  svg += text((X(e.start_s) + X(endAt)) / 2, lanes.chest.y - 32, `Episode saved when breathing resumes · pause ${e.pause_s.toFixed(1)} s · HR min ${e.hr_min} · SpO2 min ${e.spo2_min} %`, { color: C.alarm, size: 13, weight: 600, anchor: "middle" });
+
+  // 3. Heart rate
+  const hrPts = frames.filter((f) => f.t >= t0 && f.t <= t1 && f.hr > 0);
+  const Yh = (v) => lanes.hr.y + lanes.hr.h - ((v - 60) / (180 - 60)) * lanes.hr.h;
+  svg += laneTitle(lanes.hr, "Heart rate", C.pulse, ["From the pulse wave: median", "of the last 8 beat intervals.", `Alarm below ${SETTINGS.hrLow} bpm.`]);
+  svg += `<rect x="${L}" y="${lanes.hr.y}" width="${W}" height="${lanes.hr.h}" fill="none" stroke="${C.line}"/>`;
+  svg += `<line x1="${L}" y1="${Yh(SETTINGS.hrLow)}" x2="${R}" y2="${Yh(SETTINGS.hrLow)}" stroke="${C.alarm}" stroke-opacity="0.7" stroke-dasharray="4 5"/>`;
+  svg += text(L - 10, Yh(SETTINGS.hrLow) + 4, `${SETTINGS.hrLow}`, { mono: true, size: 12, color: C.faint, anchor: "end" });
+  svg += text(L - 10, Yh(150) + 4, "150", { mono: true, size: 12, color: C.faint, anchor: "end" });
+  svg += `<polyline points="${hrPts.map((f) => `${X(f.t).toFixed(1)},${Yh(f.hr).toFixed(1)}`).join(" ")}" fill="none" stroke="${C.pulse}" stroke-width="2.4" stroke-linejoin="round"/>`;
+
+  // 4. SpO2
+  const sPts = frames.filter((f) => f.t >= t0 && f.t <= t1 && f.spo2 !== null);
+  const Ys = (v) => lanes.spo2.y + lanes.spo2.h - ((v - 70) / (100 - 70)) * lanes.spo2.h;
+  svg += laneTitle(lanes.spo2, "SpO2", C.spo2, ["Reported by the sensor", "once a second.", `Alarm below ${SETTINGS.spo2Low} %.`]);
+  svg += `<rect x="${L}" y="${lanes.spo2.y}" width="${W}" height="${lanes.spo2.h}" fill="none" stroke="${C.line}"/>`;
+  svg += `<line x1="${L}" y1="${Ys(SETTINGS.spo2Low)}" x2="${R}" y2="${Ys(SETTINGS.spo2Low)}" stroke="${C.alarm}" stroke-opacity="0.7" stroke-dasharray="4 5"/>`;
+  svg += text(L - 10, Ys(SETTINGS.spo2Low) + 4, `${SETTINGS.spo2Low}`, { mono: true, size: 12, color: C.faint, anchor: "end" });
+  svg += text(L - 10, Ys(95) + 4, "95", { mono: true, size: 12, color: C.faint, anchor: "end" });
+  svg += `<polyline points="${sPts.map((f) => `${X(f.t).toFixed(1)},${Ys(f.spo2).toFixed(1)}`).join(" ")}" fill="none" stroke="${C.spo2}" stroke-width="2.4" stroke-linejoin="round"/>`;
+
+  document.getElementById("fig").innerHTML = svg;
+</script>
+</body>
+</html>

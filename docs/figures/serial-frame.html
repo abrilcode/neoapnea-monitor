@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="figure-size" content="1200x352">
+<title>Serial frame</title>
+<link rel="stylesheet" href="/app/brand.css">
+<style>
+  html, body { margin: 0; background: transparent; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .card { width: 1200px; height: 352px; background: var(--ink); border-radius: 28px; padding: 34px 40px; }
+  .eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .rate { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+  .code { font-family: var(--mono); font-size: 19px; color: var(--text); }
+  .k { color: var(--muted); } .b { color: var(--breath); } .p { color: var(--pulse); }
+  .s { color: var(--spo2); } .m { color: var(--faint); }
+  svg text { font-family: var(--mono); }
+  .legend { display: flex; gap: 34px; margin-top: 4px; font-size: 15px; color: var(--muted); }
+  .legend span.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 9px; vertical-align: -1px; border: 1.3px solid; }
+  .legend b { font-weight: 500; color: var(--text); font-family: var(--mono); font-size: 14px; margin-right: 6px; }
+  .row2 { display: flex; align-items: center; gap: 22px; margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <div class="eyebrow">Serial frame · 57600 baud</div>
+    <div class="rate">one line every 0.25 s</div>
+  </div>
+  <div class="code" style="margin-top:16px"><span class="k">Buffer:</span> <span class="m">1</span>, <span class="b">16702, 16855</span>, <span class="p">20114, …, 20087</span>, <span class="m">1</span></div>
+  <svg id="strip" width="1120" height="86" viewBox="0 0 1120 86" style="margin-top:16px;display:block"></svg>
+  <div class="legend">
+    <div><span class="sw" style="background:var(--raised);border-color:var(--line-strong)"></span><b>1</b>start and end markers</div>
+    <div><span class="sw" style="background:rgba(255,79,195,.16);border-color:var(--breath)"></span><b>az0–az1</b>chest z axis, 2 samples per frame (8 samples/s)</div>
+    <div><span class="sw" style="background:rgba(91,212,106,.13);border-color:var(--pulse)"></span><b>r0–r24</b>PPG red, 25 samples at 100 Hz</div>
+  </div>
+  <div class="row2">
+    <div class="code"><span class="k">SPO2=</span> <span class="s">96</span>, <span class="m">1</span></div>
+    <svg width="110" height="40" viewBox="0 0 110 40">
+      <rect x="1" y="1" width="58" height="38" rx="6" fill="rgba(60,196,230,.16)" stroke="var(--spo2)" stroke-width="1.5"/>
+      <text x="30" y="25.5" font-size="14" fill="var(--text)" text-anchor="middle">96</text>
+      <rect x="66" y="1" width="38" height="38" rx="6" fill="var(--raised)" stroke="var(--line-strong)" stroke-width="1.5"/>
+      <text x="85" y="25.5" font-size="14" fill="var(--muted)" text-anchor="middle">1</text>
+    </svg>
+    <div style="font-size:15px;color:var(--muted)"><span style="color:var(--text)">SpO2 value and valid flag</span> &nbsp;·&nbsp; every 100 PPG samples (1 s), computed on the Arduino</div>
+  </div>
+</div>
+<script>
+{
+  // 29 cells: start marker, 2 chest samples, 25 PPG samples, end marker.
+  const svg = document.getElementById("strip");
+  const NS = "http://www.w3.org/2000/svg";
+  const cellW = 36, gap = 2.6, y0 = 2, h = 44;
+  const cells = [{ t: "1", k: "m" }, { t: "az0", k: "b" }, { t: "az1", k: "b" }];
+  for (let i = 0; i < 25; i++) cells.push({ t: "r" + i, k: "p" });
+  cells.push({ t: "1", k: "m" });
+  const look = {
+    m: { fill: "var(--raised)", stroke: "var(--line-strong)", text: "var(--muted)" },
+    b: { fill: "rgba(255,79,195,.16)", stroke: "var(--breath)", text: "var(--text)" },
+    p: { fill: "rgba(91,212,106,.13)", stroke: "var(--pulse)", text: "var(--text)" },
+  };
+  const el = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    if (text !== undefined) e.textContent = text;
+    svg.appendChild(e);
+  };
+  cells.forEach((c, i) => {
+    const s = look[c.k], x = i * (cellW + gap) + 1;
+    el("rect", { x: x + 0.75, y: y0, width: cellW - 1.5, height: h, rx: 5, fill: s.fill, stroke: s.stroke, "stroke-width": 1.3 });
+    el("text", { x: x + cellW / 2, y: y0 + h / 2 + 4.5, "font-size": c.t.length > 2 ? 11.5 : 13, fill: s.text, "text-anchor": "middle" }, c.t);
+    el("text", { x: x + cellW / 2, y: y0 + h + 19, "font-size": 11, fill: "var(--faint)", "text-anchor": "middle" }, String(i));
+  });
+}
+</script>
+</body>
+</html>

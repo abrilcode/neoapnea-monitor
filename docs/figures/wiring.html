@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="figure-size" content="1200x900">
+<title>Wiring</title>
+<link rel="stylesheet" href="/app/brand.css">
+<style>
+  html, body { margin: 0; background: transparent; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .card { width: 1200px; height: 900px; background: var(--ink); border-radius: 28px; padding: 34px 40px; }
+  .eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
+  svg text { font-family: var(--mono); }
+  svg .sans { font-family: var(--sans); }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; }
+  th { text-align: left; font-weight: 400; color: var(--muted); font-family: var(--mono); font-size: 12px; letter-spacing: .12em;
+       text-transform: uppercase; padding: 0 0 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 9px 0; border-bottom: 1px solid var(--line); color: var(--text); }
+  td.pin { font-family: var(--mono); font-size: 14px; }
+  td .sw { display: inline-block; width: 22px; height: 4px; border-radius: 2px; margin-right: 12px; vertical-align: 4px; }
+  .note { margin-top: 14px; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <div class="eyebrow">Wiring · both sensors on one I2C bus</div>
+    <div class="eyebrow">4 wires per sensor</div>
+  </div>
+  <svg id="w" width="1120" height="600" viewBox="0 0 1120 600" style="display:block;margin-top:6px"></svg>
+  <table>
+    <tr><th style="width:26%">Signal</th><th style="width:26%">Arduino Mega 2560</th><th style="width:24%">GY-521 (MPU-6050)</th><th>MAX30102</th></tr>
+    <tr><td><span class="sw" style="background:var(--wire-5v)"></span>Power</td><td class="pin">5V</td><td class="pin">VCC</td><td class="pin">VIN</td></tr>
+    <tr><td><span class="sw" style="background:var(--wire-gnd)"></span>Ground</td><td class="pin">GND</td><td class="pin">GND</td><td class="pin">GND</td></tr>
+    <tr><td><span class="sw" style="background:var(--wire-sda)"></span>I2C data</td><td class="pin">SDA · pin 20</td><td class="pin">SDA</td><td class="pin">SDA</td></tr>
+    <tr><td><span class="sw" style="background:var(--wire-scl)"></span>I2C clock</td><td class="pin">SCL · pin 21</td><td class="pin">SCL</td><td class="pin">SCL</td></tr>
+  </table>
+  <div class="note">Most GY-521 and MAX30102 breakouts have an on-board regulator and accept 5 V; check yours.</div>
+</div>
+<script>
+{
+  const svg = document.getElementById("w");
+  const NS = "http://www.w3.org/2000/svg";
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const C = {
+    ink: css("--ink"), panel: css("--panel"), raised: css("--raised"), line: css("--line"), strong: css("--line-strong"),
+    text: css("--text"), muted: css("--muted"), faint: css("--faint"), breath: css("--breath"), pulse: css("--pulse"),
+    v5: css("--wire-5v"), gnd: css("--wire-gnd"), sda: css("--wire-sda"), scl: css("--wire-scl"),
+  };
+  const el = (tag, attrs, text, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    if (text !== undefined) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  };
+  // Orthogonal path through points with rounded corners.
+  const route = (pts, r = 9) => {
+    let d = `M${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+      const d1 = Math.hypot(x1 - x0, y1 - y0), d2 = Math.hypot(x2 - x1, y2 - y1);
+      const k = Math.min(r, d1 / 2, d2 / 2);
+      const ax = x1 - ((x1 - x0) / d1) * k, ay = y1 - ((y1 - y0) / d1) * k;
+      const bx = x1 + ((x2 - x1) / d2) * k, by = y1 + ((y2 - y1) / d2) * k;
+      d += ` L${ax} ${ay} Q${x1} ${y1} ${bx} ${by}`;
+    }
+    const [xe, ye] = pts[pts.length - 1];
+    return d + ` L${xe} ${ye}`;
+  };
+  // A wire is drawn over a wider ink stroke, so wires drawn later hop over earlier ones.
+  const wire = (pts, color) => {
+    const d = route(pts);
+    el("path", { d, fill: "none", stroke: C.ink, "stroke-width": 9, "stroke-linecap": "round", "stroke-linejoin": "round" });
+    el("path", { d, fill: "none", stroke: color, "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  };
+  const dot = (x, y, color) => el("circle", { cx: x, cy: y, r: 5, fill: color, stroke: C.ink, "stroke-width": 2 });
+
+  // ---- Arduino Mega 2560 (stylised, header positions as on the board)
+  const M = { x: 40, y: 150, w: 460, h: 250 };
+  el("rect", { x: M.x, y: M.y, width: M.w, height: M.h, rx: 16, fill: C.raised, stroke: C.strong, "stroke-width": 1.5 });
+  // USB-B port and DC jack on the left edge
+  el("rect", { x: M.x - 22, y: M.y + 34, width: 64, height: 52, rx: 5, fill: "#222a35", stroke: C.strong, "stroke-width": 1.5 });
+  el("rect", { x: M.x - 10, y: M.y + 46, width: 30, height: 28, rx: 3, fill: C.ink });
+  el("text", { x: M.x + 52, y: M.y + 65, "font-size": 12, fill: C.muted }, "USB-B");
+  el("rect", { x: M.x - 14, y: M.y + 170, width: 54, height: 46, rx: 6, fill: "#222a35", stroke: C.strong, "stroke-width": 1.5 });
+  el("circle", { cx: M.x + 10, cy: M.y + 193, r: 9, fill: C.ink });
+  // MCU
+  el("rect", { x: M.x + 196, y: M.y + 92, width: 74, height: 74, rx: 6, fill: C.ink, stroke: C.strong, "stroke-width": 1.2, transform: `rotate(45 ${M.x + 233} ${M.y + 129})` });
+  el("text", { x: M.x + 233, y: M.y + 133, "font-size": 11, fill: C.faint, "text-anchor": "middle" }, "ATmega2560");
+  el("text", { x: M.x + 66, y: M.y + 196, "font-size": 15, fill: C.text, "letter-spacing": "2.4" }, "ARDUINO MEGA 2560");
+
+  // Communication header (pins 14-21) on the top edge
+  const comm = ["14", "15", "16", "17", "18", "19", "20", "21"];
+  const commX = (i) => M.x + 262 + i * 24, commY = M.y + 16;
+  el("text", { x: commX(0) - 6, y: commY + 30, "font-size": 11, fill: C.faint, "letter-spacing": "1.5" }, "COMMUNICATION");
+  comm.forEach((p, i) => {
+    const used = i >= 6;
+    el("rect", { x: commX(i) - 7, y: commY - 7, width: 14, height: 14, rx: 2.5, fill: used ? C.text : "#2a3340" });
+    if (!used) el("text", { x: commX(i), y: commY - 14, "font-size": 10, fill: C.faint, "text-anchor": "middle" }, p);
+  });
+  // Power header on the bottom edge
+  const power = ["IOREF", "RESET", "3.3V", "5V", "GND", "GND", "VIN"];
+  const powX = (i) => M.x + 110 + i * 24, powY = M.y + M.h - 16;
+  el("text", { x: powX(6) + 20, y: powY + 4, "font-size": 11, fill: C.faint, "letter-spacing": "1.5" }, "POWER");
+  power.forEach((p, i) => {
+    const used = i === 3 || i === 4;
+    el("rect", { x: powX(i) - 7, y: powY - 7, width: 14, height: 14, rx: 2.5, fill: used ? C.text : "#2a3340" });
+  });
+
+  // ---- Breakouts
+  const pinY0 = { gy: 122, max: 398 }, step = 26, bx = 790;
+  const board = (y, h, accent, title, chip, addr, pins, used, key) => {
+    el("rect", { x: bx, y, width: 250, height: h, rx: 14, fill: C.raised, stroke: accent, "stroke-width": 1.5 });
+    pins.forEach((p, i) => {
+      const py = pinY0[key] + i * step, on = used.includes(p);
+      el("circle", { cx: bx, cy: py, r: 6, fill: on ? C.text : "#343e4c", stroke: C.raised, "stroke-width": 2 });
+      el("text", { x: bx + 18, y: py + 4.5, "font-size": 13, fill: on ? C.text : C.faint }, p);
+    });
+    return { title, chip, addr };
+  };
+  const gyPins = ["VCC", "GND", "SCL", "SDA", "XDA", "XCL", "AD0", "INT"];
+  const maxPins = ["VIN", "SDA", "SCL", "INT", "IRD", "RD", "GND"];
+  board(96, 236, C.breath, "GY-521", "MPU-6050", "0x68", gyPins, ["VCC", "GND", "SCL", "SDA"], "gy");
+  board(372, 208, C.pulse, "MAX30102", "", "0x57", maxPins, ["VIN", "SDA", "SCL", "GND"], "max");
+  // GY-521 chip and labels
+  el("rect", { x: bx + 118, y: 150, width: 64, height: 64, rx: 6, fill: C.ink, stroke: C.strong, "stroke-width": 1.2 });
+  el("circle", { cx: bx + 128, cy: 160, r: 2.5, fill: C.faint });
+  el("text", { x: bx + 150, y: 186, "font-size": 10.5, fill: C.muted, "text-anchor": "middle" }, "MPU-6050");
+  el("text", { x: bx + 232, y: 262, "font-size": 15, fill: C.breath, "text-anchor": "end" }, "GY-521");
+  el("text", { x: bx + 232, y: 284, "font-size": 12.5, fill: C.muted, "text-anchor": "end", class: "sans" }, "accelerometer");
+  el("text", { x: bx + 232, y: 312, "font-size": 12.5, fill: C.muted, "text-anchor": "end" }, "I2C 0x68");
+  // MAX30102 sensor window and labels
+  el("rect", { x: bx + 122, y: 404, width: 60, height: 40, rx: 8, fill: C.ink, stroke: C.strong, "stroke-width": 1.2 });
+  el("circle", { cx: bx + 140, cy: 424, r: 5, fill: "#3a1f25", stroke: "#6b2e3a", "stroke-width": 1 });
+  el("circle", { cx: bx + 164, cy: 424, r: 5, fill: "#252033", stroke: "#4a3d63", "stroke-width": 1 });
+  el("text", { x: bx + 232, y: 512, "font-size": 15, fill: C.pulse, "text-anchor": "end" }, "MAX30102");
+  el("text", { x: bx + 232, y: 534, "font-size": 12.5, fill: C.muted, "text-anchor": "end", class: "sans" }, "pulse oximeter");
+  el("text", { x: bx + 232, y: 562, "font-size": 12.5, fill: C.muted, "text-anchor": "end" }, "I2C 0x57");
+
+  const gy = (p) => pinY0.gy + gyPins.indexOf(p) * step;
+  const mx = (p) => pinY0.max + maxPins.indexOf(p) * step;
+
+  // ---- Bus columns, left to right: 5V, GND, SCL, SDA
+  const X = { v5: 610, gnd: 640, scl: 670, sda: 700 };
+  const feed = { sda: 46, scl: 74, gnd: 448, v5: 474 };
+
+  // Feeds from the Mega to the bus
+  wire([[commX(6), commY], [commX(6), feed.sda], [X.sda, feed.sda], [X.sda, mx("SDA")]], C.sda);
+  wire([[commX(7), commY], [commX(7), feed.scl], [X.scl, feed.scl], [X.scl, mx("SCL")]], C.scl);
+  wire([[powX(3), powY], [powX(3), feed.v5], [X.v5, feed.v5], [X.v5, gy("VCC")]], C.v5);
+  wire([[powX(4), powY], [powX(4), feed.gnd], [X.gnd, feed.gnd], [X.gnd, gy("GND")]], C.gnd);
+  wire([[X.gnd, feed.gnd], [X.gnd, mx("GND")]], C.gnd);
+  // Stubs from the bus to the breakout pins (drawn last, so they hop over the bus)
+  const stubs = [
+    ["v5", gy("VCC")], ["gnd", gy("GND")], ["scl", gy("SCL")], ["sda", gy("SDA")],
+    ["v5", mx("VIN")], ["sda", mx("SDA")], ["scl", mx("SCL")], ["gnd", mx("GND")],
+  ];
+  for (const [net, y] of stubs) wire([[X[net], y], [bx - 6, y]], C[net]);
+  for (const [net, y] of stubs) dot(X[net], y, C[net]);
+  dot(X.gnd, feed.gnd, C.gnd);
+  // Pins redrawn on top of the wire ends
+  for (const [, y] of stubs) el("circle", { cx: bx, cy: y, r: 6, fill: C.text, stroke: C.raised, "stroke-width": 2 });
+  for (const [x, y] of [[commX(6), commY], [commX(7), commY], [powX(3), powY], [powX(4), powY]])
+    el("rect", { x: x - 7, y: y - 7, width: 14, height: 14, rx: 2.5, fill: C.text });
+
+  // Pin labels on the Mega, next to their wires
+  el("text", { x: commX(6) - 10, y: 118, "font-size": 13, fill: C.sda, "text-anchor": "end" }, "SDA 20");
+  el("text", { x: commX(7) + 10, y: 118, "font-size": 13, fill: C.scl }, "SCL 21");
+  el("text", { x: powX(3) - 10, y: 432, "font-size": 13, fill: C.v5, "text-anchor": "end" }, "5V");
+  el("text", { x: powX(4) + 10, y: 432, "font-size": 13, fill: C.gnd }, "GND");
+}
+</script>
+</body>
+</html>

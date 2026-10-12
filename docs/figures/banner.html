@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="figure-size" content="1280x480">
+<link rel="stylesheet" href="/app/brand.css">
+<style>
+  html, body { margin: 0; background: transparent; }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .card {
+    position: relative; width: 1280px; height: 480px; overflow: hidden;
+    background: var(--ink); border-radius: 28px;
+  }
+  svg.bg { position: absolute; inset: 0; }
+  .copy { position: absolute; left: 64px; top: 52px; }
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand img { width: 84px; height: 84px; }
+  .brand .word { display: flex; flex-direction: column; font: 600 96px/0.8 var(--sans); letter-spacing: -0.05em; }
+  .brand .word small { font: 500 17px/1 var(--mono); letter-spacing: 0.66em; text-transform: uppercase; color: var(--muted); margin-top: 16px; margin-left: 4px; }
+  .tag { margin-top: 26px; font: 400 26px/1.3 var(--sans); color: var(--text); letter-spacing: -0.01em; }
+  .spec { margin-top: 14px; font: 500 13px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .vitals { position: absolute; right: 60px; top: 58px; display: flex; gap: 34px; text-align: right; }
+  .vitals div { display: flex; flex-direction: column; gap: 8px; }
+  .vitals .k { font: 500 12px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .vitals .mixed { text-transform: none; letter-spacing: 0.06em; }
+  .vitals b { font: 600 52px/0.9 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .vitals small { font: 500 13px/1 var(--mono); color: var(--muted); margin-left: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <svg class="bg" id="traces" width="1280" height="480" viewBox="0 0 1280 480"></svg>
+  <div class="copy">
+    <div class="brand"><img src="/app/mark.svg" alt=""><div class="word">neoapnea<small>monitor</small></div></div>
+    <div class="tag">Open-source apnea detection for preterm infants</div>
+    <div class="spec">Arduino · MPU-6050 · MAX30102 · runs in the browser</div>
+  </div>
+  <div class="vitals" id="vitals"></div>
+</div>
+<script type="module">
+  import { points, range, record } from "./signals.js";
+
+  const { monitor, chest, ppg, frames } = record(80);
+  const episode = monitor.episodes[0];
+  const t0 = episode.start_s - 18, t1 = episode.start_s + episode.pause_s + 9;
+  const W = 1280, x = 0, w = W;
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  // Chest trace across the lower half, pulse wave under it.
+  const chestBox = { y: 312, h: 84 };
+  const ppgBox = { y: 410, h: 48 };
+  const [clo, chi] = range(chest.v.filter((_, i) => chest.t[i] >= t0 && chest.t[i] <= t1), 0.08);
+  const inWin = ppg.v.filter((_, i) => ppg.t[i] >= t0 && ppg.t[i] <= t1);
+  const [plo, phi] = range(inWin, 0.1);
+  const X = (t) => x + ((t - t0) / (t1 - t0)) * w;
+  const p0 = X(episode.start_s), p1 = X(episode.start_s + episode.pause_s);
+
+  let grid = "";
+  for (let i = 0; i <= 32; i++) grid += `<line x1="${i * 40}" y1="0" x2="${i * 40}" y2="480" stroke="${css("--line")}" stroke-opacity="0.35"/>`;
+  for (let j = 0; j <= 12; j++) grid += `<line x1="0" y1="${j * 40}" x2="1280" y2="${j * 40}" stroke="${css("--line")}" stroke-opacity="0.35"/>`;
+
+  document.getElementById("traces").innerHTML = `
+    <defs>
+      <linearGradient id="fade" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="${css("--ink")}" stop-opacity="1"/>
+        <stop offset="0.5" stop-color="${css("--ink")}" stop-opacity="0.6"/>
+        <stop offset="1" stop-color="${css("--ink")}" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="glow" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    ${grid}
+    <rect x="0" y="0" width="1280" height="290" fill="url(#fade)"/>
+    <rect x="${p0}" y="${chestBox.y - 22}" width="${p1 - p0}" height="${ppgBox.y + ppgBox.h - chestBox.y + 26}" fill="${css("--alarm")}" fill-opacity="0.10"/>
+    <rect x="${p0}" y="${chestBox.y - 22}" width="${p1 - p0}" height="2" fill="${css("--alarm")}"/>
+    <text x="${p0 + 10}" y="${chestBox.y - 4}" fill="${css("--alarm")}" font-family="Geist Mono" font-size="13" font-weight="500" letter-spacing="1.5">NO BREATH · ${episode.pause_s.toFixed(1)} S</text>
+    <polyline points="${points(chest, t0, t1, clo, chi, x, chestBox.y, w, chestBox.h)}" fill="none" stroke="${css("--breath")}" stroke-width="2.4" stroke-linejoin="round" filter="url(#glow)"/>
+    <polyline points="${points(ppg, t0, t1, plo, phi, x, ppgBox.y, w, ppgBox.h, 2)}" fill="none" stroke="${css("--pulse")}" stroke-width="1.6" stroke-linejoin="round" filter="url(#glow)"/>
+  `;
+
+  // The lowest values the monitor measured during the episode.
+  document.getElementById("vitals").innerHTML = `
+    <div><span class="k">Pause</span><b style="color:${css("--alarm")}">${episode.pause_s.toFixed(1)}<small>s</small></b></div>
+    <div><span class="k">HR min</span><b style="color:${css("--pulse")}">${episode.hr_min}<small>bpm</small></b></div>
+    <div><span class="k"><span class="mixed">SpO2</span> min</span><b style="color:${css("--spo2")}">${episode.spo2_min}<small>%</small></b></div>`;
+</script>
+</body>
+</html>

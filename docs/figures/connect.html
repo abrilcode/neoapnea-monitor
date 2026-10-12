@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="figure-size" content="1200x500">
+<title>Connect the Arduino</title>
+<link rel="stylesheet" href="/app/brand.css">
+<style>
+  html, body { margin: 0; background: transparent; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .card { width: 1200px; height: 500px; background: var(--ink); border-radius: 28px; padding: 40px 48px; position: relative; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 30px; position: relative; }
+  .step { display: flex; flex-direction: column; }
+  .stage {
+    height: 240px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line);
+    position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  .n { font: 500 12px/1 var(--mono); letter-spacing: .14em; color: var(--muted); margin-top: 18px; }
+  .title { font: 600 16px/1.25 var(--sans); margin-top: 8px; letter-spacing: -0.01em; }
+  .desc { font: 400 13px/1.4 var(--sans); color: var(--muted); margin-top: 6px; }
+  .arrow { position: absolute; top: 120px; width: 28px; height: 14px; }
+  .foot { position: absolute; left: 48px; right: 48px; bottom: 34px; font: 400 13px/1.4 var(--sans); color: var(--faint);
+          border-top: 1px solid var(--line); padding-top: 14px; }
+  .mono { font-family: var(--mono); }
+
+  /* Mock browser window */
+  .win { width: 222px; border-radius: 10px; background: var(--ink); border: 1px solid var(--line-strong); overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 5px; padding: 8px 9px; border-bottom: 1px solid var(--line); }
+  .bar i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
+  .url { margin-left: 6px; flex: 1; font: 400 8.5px/1 var(--mono); color: var(--muted); background: var(--panel);
+         border-radius: 5px; padding: 4px 6px; white-space: nowrap; overflow: hidden; }
+  .body { padding: 12px; }
+  .brandrow { display: flex; align-items: center; gap: 6px; }
+  .brandrow img { width: 18px; }
+  .brandrow b { font: 600 13px/0.9 var(--sans); letter-spacing: -0.04em; display: flex; flex-direction: column; gap: 2px; }
+  .brandrow b small { font: 500 5.5px/1 var(--mono); letter-spacing: .4em; color: var(--muted); }
+  .seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); margin-top: 12px; }
+  .seg span { font-size: 10px; padding: 5px 8px; border-radius: 5px; color: var(--muted); }
+  .seg span.on { background: var(--raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .btn { display: inline-block; font: 600 10.5px/1 var(--sans); padding: 7px 12px; border-radius: 6px; margin-top: 10px; }
+  .btn.primary { background: var(--text); color: var(--ink); box-shadow: 0 0 0 4px rgb(60 196 230 / 0.35); }
+  .btn.ghost { border: 1px solid var(--line-strong); color: var(--text); }
+
+  /* Mock port chooser */
+  .chooser { width: 226px; border-radius: 12px; background: #1b222c; border: 1px solid var(--line-strong); padding: 12px; }
+  .chooser p { margin: 0 0 10px; font: 400 10.5px/1.35 var(--sans); color: var(--text); }
+  .port { font: 400 9.5px/1.3 var(--sans); padding: 8px; border-radius: 6px; color: var(--muted); }
+  .port.on { background: rgb(60 196 230 / 0.16); color: var(--text); box-shadow: inset 0 0 0 1px rgb(60 196 230 / 0.6); }
+  .port small { display: block; font: 400 8.5px/1.3 var(--mono); color: var(--faint); margin-top: 2px; }
+  .actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+  .actions .btn { margin-top: 0; padding: 6px 10px; font-size: 10px; }
+  .actions .btn.primary { box-shadow: none; }
+
+  /* Mock monitor */
+  .status { display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: var(--muted); margin-top: 2px; }
+  .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--pulse); box-shadow: 0 0 0 2px rgb(91 212 106 / 0.2); }
+  .mini { display: grid; grid-template-columns: 1fr 52px; gap: 6px; margin-top: 10px; }
+  .mini .nums { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .mini .nums span { font: 500 6px/1 var(--mono); letter-spacing: .12em; color: var(--muted); display: block; }
+  .mini .nums b { font: 600 20px/1 var(--sans); letter-spacing: -0.04em; display: block; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <span class="eyebrow">Connect the Arduino</span>
+    <span class="eyebrow">Web Serial · 57600 baud</span>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="stage">
+        <svg width="236" height="200" viewBox="0 0 236 200">
+          <!-- board -->
+          <rect x="14" y="58" width="104" height="70" rx="8" fill="#151b24" stroke="#2f3946" stroke-width="1.5"/>
+          <rect x="6" y="70" width="18" height="18" rx="3" fill="#232b37" stroke="#2f3946"/>
+          <rect x="54" y="80" width="26" height="26" rx="3" transform="rotate(45 67 93)" fill="#07090d" stroke="#2f3946"/>
+          <g fill="#2f3946">
+            <rect x="40" y="62" width="70" height="5" rx="1.5"/><rect x="40" y="119" width="70" height="5" rx="1.5"/>
+          </g>
+          <text x="66" y="148" font-family="Geist Mono" font-size="9.5" fill="#8e98a8" text-anchor="middle" letter-spacing="1">MEGA 2560</text>
+          <!-- USB cable to the laptop -->
+          <path d="M6 79 C -14 79, -6 30, 40 24 S 150 20, 170 70" fill="none" stroke="#eef2f7" stroke-width="2.4" stroke-linecap="round" transform="translate(12 0)"/>
+          <!-- laptop -->
+          <rect x="150" y="74" width="74" height="50" rx="5" fill="#0e1218" stroke="#8e98a8" stroke-width="1.6"/>
+          <rect x="158" y="82" width="58" height="34" rx="2" fill="#07090d"/>
+          <path d="M162 104 l6 -8 l6 6 l8 -12 l8 14 l6 -5 l8 6" fill="none" stroke="#ff4fc3" stroke-width="1.4"/>
+          <path d="M140 128 h94 l-8 7 h-78 z" fill="#151b24" stroke="#8e98a8" stroke-width="1.4"/>
+          <text x="96" y="16" font-family="Geist Mono" font-size="10" fill="#8e98a8" text-anchor="middle" letter-spacing="1">USB</text>
+        </svg>
+      </div>
+      <div class="n">1</div>
+      <div class="title">Plug in the board</div>
+      <div class="desc">Flash the firmware once, then connect the Mega by USB.</div>
+    </div>
+
+    <div class="step">
+      <div class="stage">
+        <div class="win">
+          <div class="bar"><i></i><i></i><i></i><span class="url">abrilcode.github.io/neoapnea-monitor</span></div>
+          <div class="body">
+            <div class="brandrow"><img src="/app/mark.svg" alt=""><b>neoapnea<small>MONITOR</small></b></div>
+            <div class="seg"><span>Simulator</span><span class="on">Arduino</span></div><br>
+            <span class="btn primary">Connect</span>
+          </div>
+        </div>
+      </div>
+      <div class="n">2</div>
+      <div class="title">Choose Arduino, press Connect</div>
+      <div class="desc">In Chrome or Edge on a desktop: the live demo or a local copy.</div>
+    </div>
+
+    <div class="step">
+      <div class="stage">
+        <div class="chooser">
+          <p>abrilcode.github.io wants to connect to a serial port</p>
+          <div class="port on">Arduino Mega 2560<small>cu.usbmodem1101</small></div>
+          <div class="port">Bluetooth-Incoming-Port<small>cu.Bluetooth-Incoming-Port</small></div>
+          <div class="actions"><span class="btn ghost">Cancel</span><span class="btn primary">Connect</span></div>
+        </div>
+      </div>
+      <div class="n">3</div>
+      <div class="title">Pick the board's port</div>
+      <div class="desc">The browser lists the serial ports; the page only gets the one you pick.</div>
+    </div>
+
+    <div class="step">
+      <div class="stage">
+        <div class="win">
+          <div class="bar"><i></i><i></i><i></i><span class="url">abrilcode.github.io/neoapnea-monitor</span></div>
+          <div class="body">
+            <div class="status"><i></i>Arduino · 57600 baud</div>
+            <div class="mini">
+              <svg width="130" height="86" viewBox="0 0 130 86">
+                <path id="breath" fill="none" stroke="#ff4fc3" stroke-width="1.6" stroke-linejoin="round"/>
+                <path id="pulse" fill="none" stroke="#5bd46a" stroke-width="1.4" stroke-linejoin="round"/>
+              </svg>
+              <div class="nums">
+                <div><span>HR</span><b style="color:#5bd46a">148</b></div>
+                <div><span>SpO2</span><b style="color:#3cc4e6">96</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="n">4</div>
+      <div class="title">Signals appear</div>
+      <div class="desc">A frame every 0.25 s: chest motion, pulse wave and SpO2.</div>
+    </div>
+
+    <svg class="arrow" style="left: calc(25% - 22px)" viewBox="0 0 28 14"><path d="M2 7 H24 M18 2 L24 7 L18 12" fill="none" stroke="#5a6475" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="arrow" style="left: calc(50% - 14px)" viewBox="0 0 28 14"><path d="M2 7 H24 M18 2 L24 7 L18 12" fill="none" stroke="#5a6475" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="arrow" style="left: calc(75% - 7px)" viewBox="0 0 28 14"><path d="M2 7 H24 M18 2 L24 7 L18 12" fill="none" stroke="#5a6475" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="foot">Close the Arduino IDE's Serial Monitor before connecting: only one program can hold the port at a time.</div>
+</div>
+<script>
+  // Small breathing and pulse traces for the mock monitor.
+  const breath = [], pulse = [];
+  for (let x = 0; x <= 130; x += 1) {
+    breath.push(`${x},${24 - 13 * Math.sin((x / 130) * 2 * Math.PI * 3.2)}`);
+    const beat = ((x / 130) * 9) % 1;
+    const p = Math.exp(-((beat - 0.3) ** 2) / 0.004) + 0.35 * Math.exp(-((beat - 0.55) ** 2) / 0.01);
+    pulse.push(`${x},${78 - 26 * p}`);
+  }
+  document.getElementById("breath").setAttribute("d", "M" + breath.join(" L"));
+  document.getElementById("pulse").setAttribute("d", "M" + pulse.join(" L"));
+</script>
+</body>
+</html>

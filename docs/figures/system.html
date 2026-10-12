@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="figure-size" content="1200x548">
+<title>System overview</title>
+<link rel="stylesheet" href="/app/brand.css">
+<style>
+  html, body { margin: 0; background: transparent; }
+  * { box-sizing: border-box; }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .card { width: 1200px; height: 548px; background: var(--ink); border-radius: 28px; position: relative; overflow: hidden; }
+  svg { position: absolute; left: 0; top: 0; }
+  svg text { font-family: var(--sans); }
+  svg .mono { font-family: var(--mono); }
+  svg .eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: .14em; fill: var(--muted); }
+</style>
+</head>
+<body>
+<div class="card"><svg id="s" width="1200" height="548" viewBox="0 22 1200 548"></svg></div>
+<script>
+{
+  const svg = document.getElementById("s");
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    if (text !== undefined) e.textContent = text;
+    svg.appendChild(e);
+    return e;
+  };
+  const C = { ink: "#07090d", panel: "#0e1218", raised: "#151b24", line: "#232b37", strong: "#2f3946",
+              text: "#eef2f7", muted: "#8e98a8", faint: "#5a6475", breath: "#ff4fc3", pulse: "#5bd46a",
+              spo2: "#3cc4e6", alarm: "#ff4d5e", body: "#1f2834", band: "#323d4b" };
+  const T = (x, y, s, attrs = {}) => el("text", Object.assign({ x, y, "font-size": 14, fill: C.text }, attrs), s);
+
+  // ---------- 1 · Sensors: incubator seen from above
+  T(56, 82, "1 · SENSORS", { class: "eyebrow" });
+  el("rect", { x: 56, y: 98, width: 484, height: 420, rx: 44, fill: C.panel, stroke: C.strong, "stroke-width": 2 });
+  el("rect", { x: 92, y: 134, width: 412, height: 348, rx: 24, fill: "#11161e", stroke: C.line, "stroke-width": 1.5 });
+  for (const cx of [196, 340]) el("circle", { cx, cy: 518, r: 21, fill: C.ink, stroke: C.strong, "stroke-width": 2 });
+  T(486, 160, "incubator", { "font-size": 13, fill: C.faint, "text-anchor": "end", class: "mono" });
+
+  // Infant on its back, head at the top: a soft silhouette.
+  const cx = 200;
+  const limb = (pts, w) => el("path", { d: "M" + pts.map((p) => p.join(" ")).join(" L"), fill: "none", stroke: C.body,
+                                      "stroke-width": w, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  limb([[cx - 30, 248], [cx - 70, 240], [cx - 64, 206]], 17);           // arms, raised beside the head
+  limb([[cx + 30, 248], [cx + 70, 240], [cx + 64, 206]], 17);
+  limb([[cx - 18, 350], [cx - 46, 390], [cx - 28, 428]], 21);           // legs, relaxed
+  limb([[cx + 18, 350], [cx + 46, 390], [cx + 28, 428]], 21);
+  el("rect", { x: cx - 39, y: 226, width: 78, height: 136, rx: 36, fill: C.body });   // torso
+  el("circle", { cx, cy: 190, r: 35, fill: C.body });                                  // head
+  for (const s of [-1, 1]) el("circle", { cx: cx + s * 64, cy: 200, r: 10, fill: C.body }); // hands
+  // Chest band at the level of the diaphragm, with the accelerometer on it.
+  el("rect", { x: cx - 45, y: 274, width: 90, height: 22, rx: 7, fill: C.band });
+  // Wires to the incubator wall.
+  const wire = (d, color) => el("path", { d, fill: "none", stroke: color, "stroke-width": 2.2, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  wire(`M${cx} 285 H 590 V 302 H 612`, C.breath);
+  wire(`M${cx + 66} 196 H 576 Q 584 196 584 204 V 262 H 612`, C.pulse);
+  el("rect", { x: cx - 9, y: 276, width: 18, height: 18, rx: 4, fill: C.ink, stroke: C.breath, "stroke-width": 2.2 });
+  el("circle", { cx, cy: 285, r: 3.2, fill: C.breath });
+  el("circle", { cx: cx + 66, cy: 196, r: 15, fill: "rgba(91,212,106,.18)" });
+  el("circle", { cx: cx + 66, cy: 196, r: 6.5, fill: C.pulse, stroke: C.ink, "stroke-width": 2 });
+  // Grommets where the cables leave the incubator.
+  for (const y of [196, 285]) el("rect", { x: 534, y: y - 8, width: 12, height: 16, rx: 3, fill: C.raised, stroke: C.strong, "stroke-width": 1.5 });
+
+  // Sensor labels, inside the incubator to the right of the infant.
+  T(312, 186, "MAX30102", { "font-size": 15.5, fill: C.pulse, class: "mono" });
+  T(312, 218, "PPG on a finger · 100 Hz", { "font-size": 13.5, fill: C.muted });
+  T(312, 275, "MPU-6050", { "font-size": 15.5, fill: C.breath, class: "mono" });
+  T(312, 307, "chest motion, z axis", { "font-size": 13.5, fill: C.muted });
+  T(312, 327, "8 samples/s", { "font-size": 13.5, fill: C.muted });
+  T(312, 362, "on a band at the", { "font-size": 13.5, fill: C.faint });
+  T(312, 382, "level of the diaphragm", { "font-size": 13.5, fill: C.faint });
+
+  // ---------- 2 · Acquisition
+  T(612, 222, "2 · ACQUISITION", { class: "eyebrow" });
+  el("rect", { x: 612, y: 238, width: 150, height: 92, rx: 14, fill: C.raised, stroke: C.strong, "stroke-width": 1.5 });
+  T(630, 274, "Arduino", { "font-size": 17, fill: C.text });
+  T(630, 298, "Mega 2560", { "font-size": 13.5, fill: C.muted, class: "mono" });
+  T(630, 318, "I2C · both sensors", { "font-size": 12, fill: C.faint });
+  T(612, 356, "outside the incubator", { "font-size": 13.5, fill: C.muted });
+
+  // USB link
+  wire("M762 284 H 790 Q 800 284 800 274 V 240 Q 800 230 810 230 H 836", C.text);
+  el("path", { d: "M830 225 L838 230 L830 235", fill: "none", stroke: C.text, "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  T(612, 378, "USB serial · 57600 baud", { "font-size": 13.5, fill: C.muted });
+
+  // ---------- 3 · Monitor: the browser app
+  T(842, 104, "3 · MONITOR", { class: "eyebrow" });
+  const bx = 842, by = 120, bw = 322, bh = 222;
+  el("rect", { x: bx, y: by, width: bw, height: bh, rx: 14, fill: C.panel, stroke: C.strong, "stroke-width": 1.5 });
+  el("line", { x1: bx, y1: by + 30, x2: bx + bw, y2: by + 30, stroke: C.line, "stroke-width": 1.5 });
+  for (let i = 0; i < 3; i++) el("circle", { cx: bx + 18 + i * 14, cy: by + 15, r: 4, fill: C.strong });
+  el("rect", { x: bx + 110, y: by + 7, width: 120, height: 16, rx: 8, fill: C.raised });
+  T(bx + 170, by + 19, "neoapnea monitor", { "font-size": 11, fill: C.muted, "text-anchor": "middle", class: "mono" });
+  // Breathing trace with a pause, then pulse trace.
+  const pts = [];
+  for (let x = 0; x <= 196; x += 2) {
+    const flat = x > 84 && x < 140;
+    pts.push([bx + 16 + x, by + 82 - (flat ? 0 : 15 * Math.sin((x / 196) * 2 * Math.PI * 4.6))]);
+  }
+  el("polyline", { points: pts.map((p) => p.join(",")).join(" "), fill: "none", stroke: C.breath, "stroke-width": 2, "stroke-linejoin": "round" });
+  el("rect", { x: bx + 16 + 84, y: by + 60, width: 56, height: 44, fill: "rgba(255,77,94,.12)" });
+  el("line", { x1: bx + 100, y1: by + 82, x2: bx + 156, y2: by + 82, stroke: C.alarm, "stroke-width": 2.4 });
+  const pp = [];
+  for (let x = 0; x <= 196; x += 1) {
+    const ph = (x / 196) * 9.5 % 1;
+    pp.push([bx + 16 + x, by + 160 - 26 * Math.exp(-((ph - 0.25) ** 2) / 0.006) - 9 * Math.exp(-((ph - 0.55) ** 2) / 0.01)]);
+  }
+  el("polyline", { points: pp.map((p) => p.join(",")).join(" "), fill: "none", stroke: C.pulse, "stroke-width": 2, "stroke-linejoin": "round" });
+  el("line", { x1: bx + 226, y1: by + 44, x2: bx + 226, y2: by + bh - 12, stroke: C.line, "stroke-width": 1.5 });
+  T(bx + 240, by + 60, "HR", { "font-size": 11, fill: C.muted, class: "mono" });
+  T(bx + 240, by + 92, "148", { "font-size": 28, fill: C.pulse, class: "mono" });
+  T(bx + 240, by + 128, "SpO2", { "font-size": 11, fill: C.muted, class: "mono" });
+  T(bx + 240, by + 160, "96", { "font-size": 28, fill: C.spo2, class: "mono" });
+  T(bx + 240, by + 192, "PAUSE", { "font-size": 11, fill: C.muted, class: "mono" });
+  T(bx + 240, by + 212, "22 s", { "font-size": 16, fill: C.alarm, class: "mono" });
+
+  // ---------- 4 · Records
+  wire(`M${bx + 160} ${by + bh} V ${by + bh + 50}`, C.text);
+  el("path", { d: `M${bx + 155} ${by + bh + 44} L${bx + 160} ${by + bh + 52} L${bx + 165} ${by + bh + 44}`, fill: "none", stroke: C.text, "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  T(842, 408, "4 · RECORDS", { class: "eyebrow" });
+  el("rect", { x: bx, y: 424, width: bw, height: 94, rx: 14, fill: C.raised, stroke: C.strong, "stroke-width": 1.5 });
+  for (let i = 0; i < 3; i++) {
+    el("rect", { x: bx + 20, y: 446 + i * 18, width: 44, height: 10, rx: 3, fill: i === 0 ? C.alarm : C.strong });
+  }
+  T(bx + 84, 462, "Episodes saved in the browser", { "font-size": 15, fill: C.text });
+  T(bx + 84, 488, "export as JSON or CSV", { "font-size": 13.5, fill: C.muted });
+}
+</script>
+</body>
+</html>
