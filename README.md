@@ -202,4 +202,4 @@ Abril Herrlein.
 
 ## License
 
-Code under the [MIT license](LICENSE). The Geist and Geist Mono fonts in `app/fonts` are under the [SIL Open Font License 1.1](app/fonts/OFL.txt).
+Code under the [MIT license](LICENSE). The IBM Plex Sans, IBM Plex Mono and Source Serif 4 fonts in `app/fonts` are under the [SIL Open Font License 1.1](app/fonts/OFL.txt).
