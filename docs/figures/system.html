@@ -9,7 +9,7 @@
   html, body { margin: 0; background: transparent; }
   * { box-sizing: border-box; }
   body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
-  .card { width: 1200px; height: 548px; background: var(--ink); border-radius: 28px; position: relative; overflow: hidden; }
+  .card { width: 1200px; height: 548px; background: var(--panel); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line-strong); position: relative; overflow: hidden; }
   svg { position: absolute; left: 0; top: 0; }
   svg text { font-family: var(--sans); }
   svg .mono { font-family: var(--mono); }
@@ -29,15 +29,16 @@
     svg.appendChild(e);
     return e;
   };
-  const C = { ink: "#07090d", panel: "#0e1218", raised: "#151b24", line: "#232b37", strong: "#2f3946",
-              text: "#eef2f7", muted: "#8e98a8", faint: "#5a6475", breath: "#ff4fc3", pulse: "#5bd46a",
-              spo2: "#3cc4e6", alarm: "#ff4d5e", body: "#1f2834", band: "#323d4b" };
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { ink: "#ffffff", panel: "#f6f7f9", raised: "#ffffff", line: css("--line"), strong: css("--line-strong"),
+              text: css("--text"), muted: css("--muted"), faint: css("--faint"), breath: css("--breath"), pulse: css("--pulse"),
+              spo2: css("--spo2"), alarm: css("--alarm"), body: "#d9dee5", band: "#9aa3af" };
   const T = (x, y, s, attrs = {}) => el("text", Object.assign({ x, y, "font-size": 14, fill: C.text }, attrs), s);
 
   // ---------- 1 · Sensors: incubator seen from above
   T(56, 82, "1 · SENSORS", { class: "eyebrow" });
   el("rect", { x: 56, y: 98, width: 484, height: 420, rx: 44, fill: C.panel, stroke: C.strong, "stroke-width": 2 });
-  el("rect", { x: 92, y: 134, width: 412, height: 348, rx: 24, fill: "#11161e", stroke: C.line, "stroke-width": 1.5 });
+  el("rect", { x: 92, y: 134, width: 412, height: 348, rx: 24, fill: "#ffffff", stroke: C.line, "stroke-width": 1.5 });
   for (const cx of [196, 340]) el("circle", { cx, cy: 518, r: 21, fill: C.ink, stroke: C.strong, "stroke-width": 2 });
   T(486, 160, "incubator", { "font-size": 13, fill: C.faint, "text-anchor": "end", class: "mono" });
 
@@ -60,7 +61,7 @@
   wire(`M${cx + 66} 196 H 576 Q 584 196 584 204 V 262 H 612`, C.pulse);
   el("rect", { x: cx - 9, y: 276, width: 18, height: 18, rx: 4, fill: C.ink, stroke: C.breath, "stroke-width": 2.2 });
   el("circle", { cx, cy: 285, r: 3.2, fill: C.breath });
-  el("circle", { cx: cx + 66, cy: 196, r: 15, fill: "rgba(91,212,106,.18)" });
+  el("circle", { cx: cx + 66, cy: 196, r: 15, fill: "rgba(15,123,116,.15)" });
   el("circle", { cx: cx + 66, cy: 196, r: 6.5, fill: C.pulse, stroke: C.ink, "stroke-width": 2 });
   // Grommets where the cables leave the incubator.
   for (const y of [196, 285]) el("rect", { x: 534, y: y - 8, width: 12, height: 16, rx: 3, fill: C.raised, stroke: C.strong, "stroke-width": 1.5 });
@@ -94,7 +95,7 @@
   el("line", { x1: bx, y1: by + 30, x2: bx + bw, y2: by + 30, stroke: C.line, "stroke-width": 1.5 });
   for (let i = 0; i < 3; i++) el("circle", { cx: bx + 18 + i * 14, cy: by + 15, r: 4, fill: C.strong });
   el("rect", { x: bx + 110, y: by + 7, width: 120, height: 16, rx: 8, fill: C.raised });
-  T(bx + 170, by + 19, "neoapnea monitor", { "font-size": 11, fill: C.muted, "text-anchor": "middle", class: "mono" });
+  T(bx + 170, by + 19, "NeoApnea Monitor", { "font-size": 11, fill: C.muted, "text-anchor": "middle", class: "mono" });
   // Breathing trace with a pause, then pulse trace.
   const pts = [];
   for (let x = 0; x <= 196; x += 2) {
@@ -102,7 +103,7 @@
     pts.push([bx + 16 + x, by + 82 - (flat ? 0 : 15 * Math.sin((x / 196) * 2 * Math.PI * 4.6))]);
   }
   el("polyline", { points: pts.map((p) => p.join(",")).join(" "), fill: "none", stroke: C.breath, "stroke-width": 2, "stroke-linejoin": "round" });
-  el("rect", { x: bx + 16 + 84, y: by + 60, width: 56, height: 44, fill: "rgba(255,77,94,.12)" });
+  el("rect", { x: bx + 16 + 84, y: by + 60, width: 56, height: 44, fill: "rgba(198,47,47,.10)" });
   el("line", { x1: bx + 100, y1: by + 82, x2: bx + 156, y2: by + 82, stroke: C.alarm, "stroke-width": 2.4 });
   const pp = [];
   for (let x = 0; x <= 196; x += 1) {

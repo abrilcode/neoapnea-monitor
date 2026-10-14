@@ -1,41 +1,38 @@
-/* NeoApnea Monitor brand tokens, shared by the app and the README figures. */
+/* NeoApnea Monitor tokens, shared by the app and the README figures.
+   A light, journal-figure look: white paper, ink text, hairline axes and a
+   blue signal palette, with red kept for apnea and alarms only. */
 
-@font-face {
-  font-family: "Geist";
-  src: url("fonts/Geist.woff2") format("woff2");
-  font-weight: 100 900;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Geist Mono";
-  src: url("fonts/GeistMono.woff2") format("woff2");
-  font-weight: 100 900;
-  font-display: swap;
-}
+@font-face { font-family: "IBM Plex Sans"; src: url("fonts/IBMPlexSans.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/IBMPlexMono-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/IBMPlexMono-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Source Serif 4"; src: url("fonts/SourceSerif4.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
 
 :root {
-  --ink: #07090d;
-  --panel: #0e1218;
-  --raised: #151b24;
-  --line: #232b37;
-  --line-strong: #2f3946;
-  --text: #eef2f7;
-  --muted: #8e98a8;
-  --faint: #5a6475;
+  /* Surfaces: --ink is the page, --panel a figure panel, --raised a fill inside it. */
+  --ink: #f3f4f6;
+  --panel: #ffffff;
+  --raised: #f6f7f9;
+  --line: #e2e5ea;
+  --line-strong: #c4cad3;
+  --grid: #eef0f3;
+  --text: #111827;
+  --muted: #4b5563;
+  --faint: #8a93a1;
 
-  /* Signal colours follow the bedside-monitor convention. */
-  --breath: #ff4fc3;
-  --pulse: #5bd46a;
-  --spo2: #3cc4e6;
-  --warn: #ffc542;
-  --alarm: #ff4d5e;
+  /* Signals */
+  --breath: #1f4e9d;
+  --pulse: #0f7b74;
+  --spo2: #5b8bd0;
+  --warn: #b7791f;
+  --alarm: #c62f2f;
 
   /* Wiring colours used in the hardware figures. */
-  --wire-5v: #ff4d5e;
-  --wire-gnd: #7d8899;
-  --wire-sda: #4f8dff;
-  --wire-scl: #ffc542;
+  --wire-5v: #c62f2f;
+  --wire-gnd: #4b5563;
+  --wire-sda: #1f4e9d;
+  --wire-scl: #b7791f;
 
-  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
 }

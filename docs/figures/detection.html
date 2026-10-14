@@ -7,7 +7,7 @@
 <style>
   html, body { margin: 0; background: transparent; }
   body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
-  .card { width: 1200px; height: 700px; background: var(--ink); border-radius: 28px; position: relative; overflow: hidden; }
+  .card { width: 1200px; height: 700px; background: var(--panel); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line-strong); position: relative; overflow: hidden; }
   .head { position: absolute; left: 48px; top: 40px; right: 48px; display: flex; justify-content: space-between; align-items: baseline; }
   .eyebrow { font: 500 13px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
   h1 { margin: 12px 0 0; font: 600 30px/1.1 var(--sans); letter-spacing: -0.03em; }
@@ -43,7 +43,7 @@
     spo2: { y: 534, h: 96 },
   };
   const text = (x, y, s, { color = C.muted, size = 13, weight = 400, mono = false, anchor = "start", ls = 0 } = {}) =>
-    `<text x="${x}" y="${y}" fill="${color}" font-family="${mono ? "Geist Mono" : "Geist"}" font-size="${size}" font-weight="${weight}" text-anchor="${anchor}" letter-spacing="${ls}">${s}</text>`;
+    `<text x="${x}" y="${y}" fill="${color}" font-family="${mono ? "IBM Plex Mono" : "IBM Plex Sans"}" font-size="${size}" font-weight="${weight}" text-anchor="${anchor}" letter-spacing="${ls}">${s}</text>`;
   const laneTitle = (lane, title, color, rule) =>
     `<rect x="48" y="${lane.y + 4}" width="8" height="8" rx="2" fill="${color}"/>` +
     text(66, lane.y + 13, title, { color: C.text, size: 15, weight: 600 }) +
@@ -79,7 +79,7 @@
   for (const r of runs) svg += `<rect x="${X(r.from)}" y="${lanes.state.y}" width="${Math.max(1, X(r.to + 0.25) - X(r.from))}" height="${lanes.state.h}" fill="${fill[r.state]}" ${r.state === "ok" ? `stroke="${C.line}"` : ""}/>`;
   const warnAt = e.start_s + SETTINGS.pauseWarningS, apneaAt = e.start_s + SETTINGS.pauseApneaS, endAt = e.start_s + e.pause_s;
   svg += text(X(e.start_s) + 10, lanes.state.y + 27, "Last breath", { color: C.muted, size: 13 });
-  svg += text(X(warnAt) + 10, lanes.state.y + 27, `${SETTINGS.pauseWarningS} s · warning`, { color: "#1b1400", size: 14, weight: 600 });
+  svg += text(X(warnAt) + 10, lanes.state.y + 27, `${SETTINGS.pauseWarningS} s · warning`, { color: "#ffffff", size: 14, weight: 600 });
   svg += text(X(apneaAt) + 10, lanes.state.y + 27, `${SETTINGS.pauseApneaS} s · apnea`, { color: "#fff", size: 14, weight: 600 });
   svg += text(X(endAt) + 10, lanes.state.y + 27, "Breathing resumes", { color: C.muted, size: 13 });
 

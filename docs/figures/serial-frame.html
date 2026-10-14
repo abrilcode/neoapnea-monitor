@@ -9,7 +9,7 @@
   html, body { margin: 0; background: transparent; }
   * { box-sizing: border-box; }
   body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
-  .card { width: 1200px; height: 352px; background: var(--ink); border-radius: 28px; padding: 34px 40px; }
+  .card { width: 1200px; height: 352px; background: var(--panel); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line-strong); padding: 34px 40px; }
   .eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
   .head { display: flex; justify-content: space-between; align-items: baseline; }
   .rate { font-family: var(--mono); font-size: 14px; color: var(--muted); }
@@ -33,13 +33,13 @@
   <svg id="strip" width="1120" height="86" viewBox="0 0 1120 86" style="margin-top:16px;display:block"></svg>
   <div class="legend">
     <div><span class="sw" style="background:var(--raised);border-color:var(--line-strong)"></span><b>1</b>start and end markers</div>
-    <div><span class="sw" style="background:rgba(255,79,195,.16);border-color:var(--breath)"></span><b>az0–az1</b>chest z axis, 2 samples per frame (8 samples/s)</div>
-    <div><span class="sw" style="background:rgba(91,212,106,.13);border-color:var(--pulse)"></span><b>r0–r24</b>PPG red, 25 samples at 100 Hz</div>
+    <div><span class="sw" style="background:rgba(31,78,157,.10);border-color:var(--breath)"></span><b>az0–az1</b>chest z axis, 2 samples per frame (8 samples/s)</div>
+    <div><span class="sw" style="background:rgba(15,123,116,.09);border-color:var(--pulse)"></span><b>r0–r24</b>PPG red, 25 samples at 100 Hz</div>
   </div>
   <div class="row2">
     <div class="code"><span class="k">SPO2=</span> <span class="s">96</span>, <span class="m">1</span></div>
     <svg width="110" height="40" viewBox="0 0 110 40">
-      <rect x="1" y="1" width="58" height="38" rx="6" fill="rgba(60,196,230,.16)" stroke="var(--spo2)" stroke-width="1.5"/>
+      <rect x="1" y="1" width="58" height="38" rx="6" fill="rgba(91,139,208,.14)" stroke="var(--spo2)" stroke-width="1.5"/>
       <text x="30" y="25.5" font-size="14" fill="var(--text)" text-anchor="middle">96</text>
       <rect x="66" y="1" width="38" height="38" rx="6" fill="var(--raised)" stroke="var(--line-strong)" stroke-width="1.5"/>
       <text x="85" y="25.5" font-size="14" fill="var(--muted)" text-anchor="middle">1</text>
@@ -58,8 +58,8 @@
   cells.push({ t: "1", k: "m" });
   const look = {
     m: { fill: "var(--raised)", stroke: "var(--line-strong)", text: "var(--muted)" },
-    b: { fill: "rgba(255,79,195,.16)", stroke: "var(--breath)", text: "var(--text)" },
-    p: { fill: "rgba(91,212,106,.13)", stroke: "var(--pulse)", text: "var(--text)" },
+    b: { fill: "rgba(31,78,157,.10)", stroke: "var(--breath)", text: "var(--text)" },
+    p: { fill: "rgba(15,123,116,.09)", stroke: "var(--pulse)", text: "var(--text)" },
   };
   const el = (tag, attrs, text) => {
     const e = document.createElementNS(NS, tag);

@@ -18,8 +18,9 @@ const params = new URLSearchParams(location.search);
 const store = new RecordStore();
 const sound = new AlarmSound();
 const charts = {
-  chest: new Waveform($("chart-chest"), { color: "breath", threshold: SETTINGS.breathThreshold, minSpan: 2500 }),
-  ppg: new Waveform($("chart-ppg"), { color: "pulse", minSpan: 60 }),
+  // The MPU-6050 reads 16384 counts per g on the ±2 g range.
+  chest: new Waveform($("chart-chest"), { color: "breath", threshold: SETTINGS.breathThreshold, minSpan: 2500, axis: "Acceleration", unit: "g", scale: 1 / 16384 }),
+  ppg: new Waveform($("chart-ppg"), { color: "pulse", minSpan: 60, axis: "PPG", unit: "a.u." }),
   trend: new TrendChart($("chart-trend")),
 };
 
@@ -212,20 +213,21 @@ function renderSide() {
 
   const list = $("episodes");
   list.replaceChildren(...episodes.slice(-50).reverse().map((e) => {
-    const li = document.createElement("li");
-    const cells = [
-      ["n", `#${e.number}`],
-      ["pause", `${e.pause_s.toFixed(1)} s pause`],
-      ["when", clockTime(e.started_at)],
-      ["detail", `HR ${orDash(e.hr_min)}–${orDash(e.hr_max)} bpm · SpO2 min ${orDash(e.spo2_min)} %${e.simulated ? " · simulated" : ""}`],
-    ];
-    for (const [cls, text] of cells) {
-      const span = document.createElement("span");
-      span.className = cls;
-      span.textContent = text;
-      li.append(span);
+    const tr = document.createElement("tr");
+    if (e.simulated) tr.className = "simulated";
+    tr.title = e.simulated ? "From the simulator" : "";
+    for (const text of [
+      `A${e.number}`,
+      clockTime(e.started_at),
+      `${e.pause_s.toFixed(1)} s`,
+      `${orDash(e.hr_min)}–${orDash(e.hr_max)}`,
+      `${orDash(e.spo2_min)} %`,
+    ]) {
+      const td = document.createElement("td");
+      td.textContent = text;
+      tr.append(td);
     }
-    return li;
+    return tr;
   }));
   $("episodes-empty").hidden = episodes.length > 0;
   renderTrend();

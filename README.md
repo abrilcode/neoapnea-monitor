@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/img/banner.png" alt="NeoApnea Monitor: open-source apnea detection for preterm infants. A chest-motion trace stops for 25.1 seconds while the pulse slows." width="100%">
+  <img src="docs/img/banner.png" alt="NeoApnea Monitor: open-source apnea detection for preterm infants. A simulated 25.1 s apnea: chest motion goes flat, the pulse wave continues, and heart rate and SpO2 fall below their alarm limits." width="100%">
 </p>
 
 <p align="center">
@@ -12,9 +12,9 @@
 
 <p align="center">
   <a href="https://github.com/abrilcode/neoapnea-monitor/actions/workflows/test.yml"><img src="https://github.com/abrilcode/neoapnea-monitor/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
-  <a href="https://abrilcode.github.io/neoapnea-monitor/"><img src="https://img.shields.io/badge/demo-live-ff4fc3" alt="Live demo"></a>
-  <img src="https://img.shields.io/badge/board-Arduino%20Mega%202560-5bd46a" alt="Arduino Mega 2560">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-3cc4e6" alt="MIT license"></a>
+  <a href="https://abrilcode.github.io/neoapnea-monitor/"><img src="https://img.shields.io/badge/demo-live-1f4e9d" alt="Live demo"></a>
+  <img src="https://img.shields.io/badge/board-Arduino%20Mega%202560-0f7b74" alt="Arduino Mega 2560">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-5b8bd0" alt="MIT license"></a>
 </p>
 
 NeoApnea Monitor watches a preterm infant's breathing, heart rate and oxygen saturation, and raises an alarm when breathing stops. An accelerometer on the chest and a pulse oximeter on a finger feed an Arduino. The monitor runs in a browser tab: it plots both signals live, sounds the alarms, and records every apnea with its length and the lowest heart rate and SpO2 during it.
@@ -29,8 +29,9 @@ It started as a student project and was rebuilt in 2026 for public release.
 Open the **[live demo](https://abrilcode.github.io/neoapnea-monitor/)**. Nothing to install, and no hardware needed: the built-in simulator plays a 100 s loop of normal breathing, a 25 s apnea in which the heart rate falls to 80 bpm and SpO2 to 76 %, and recovery. Set the speed to 4× to reach the first apnea in about 15 s.
 
 <p align="center">
-  <img src="docs/img/app-screenshot.png" alt="The monitor during a simulated apnea: all three alarms are red, the chest trace is flat for 24.9 s, heart rate 93 bpm, SpO2 77 %." width="100%">
+  <img src="docs/img/app-screenshot.png" alt="The monitor during a simulated apnea: the three alarms are red, the chest trace has been flat for 24.9 s, heart rate 93 bpm, SpO2 77 %; panels A to D." width="100%">
 </p>
+<p align="center"><sub><b>Figure 1.</b> The monitor during a simulated apnea. (A) Chest motion in g, flat since the last breath; (B) photoplethysmogram; (C) heart-rate and SpO₂ trend in 15 s blocks, with the apnea shaded; (D) summary and episode table.</sub></p>
 
 To run it locally (Node 20 or later, no dependencies):
 
@@ -59,6 +60,7 @@ Any static file server pointed at `app/` works as well, for example `python3 -m 
 <p align="center">
   <img src="docs/img/system.png" alt="System overview: MPU-6050 on a chest band and MAX30102 on a finger inside the incubator, cabled to an Arduino Mega 2560 outside it, which streams over USB serial to the browser monitor, which saves episodes." width="100%">
 </p>
+<p align="center"><sub><b>Figure 2.</b> System overview: sensors inside the incubator, acquisition on the Arduino outside it, monitoring and records in the browser.</sub></p>
 
 | Part | Role | Placement |
 |---|---|---|
@@ -72,6 +74,7 @@ Both sensors share the Mega's I2C bus: four wires each.
 <p align="center">
   <img src="docs/img/wiring.png" alt="Wiring: Mega 5V, GND, SDA pin 20 and SCL pin 21 go to VCC, GND, SDA and SCL on the GY-521 (address 0x68) and VIN, GND, SDA and SCL on the MAX30102 (address 0x57)." width="100%">
 </p>
+<p align="center"><sub><b>Figure 3.</b> Wiring. Both sensors share the Mega's I2C bus (SDA pin 20, SCL pin 21).</sub></p>
 
 ### Flash the firmware
 
@@ -93,12 +96,14 @@ Open the app in Chrome or Edge on a desktop (Web Serial is not available in Safa
 <p align="center">
   <img src="docs/img/connect.png" alt="Connecting in four steps: plug the Mega in by USB; in the monitor choose Arduino and press Connect; pick the board's port in the browser's list; the chest and pulse signals appear." width="100%">
 </p>
+<p align="center"><sub><b>Figure 4.</b> Connecting the Arduino over Web Serial.</sub></p>
 
 ## How it works
 
 <p align="center">
   <img src="docs/img/detection.png" alt="Detection on the simulator: the chest trace goes flat at 40 s; the breathing alarm turns yellow at 10 s and red at 20 s; heart rate falls below 100 bpm and SpO2 below 80 %; the episode is saved when breathing resumes after 25.1 s." width="100%">
 </p>
+<p align="center"><sub><b>Figure 5.</b> Detection on the built-in simulator: from the chest signal to a saved apnea record.</sub></p>
 
 The usual clinical definition of apnea of prematurity is a pause in breathing of 20 s or more, or a shorter one with bradycardia, cyanosis or pallor [1]. The monitor records pauses longer than 20 s and alarms on the heart rate and SpO2 separately, so a shorter pause with a slow heart or a desaturation still raises an alarm.
 
@@ -131,6 +136,7 @@ Each recorded episode has these fields, in the app and in the CSV and JSON expor
 <p align="center">
   <img src="docs/img/serial-frame.png" alt="Serial frame: Buffer: followed by 29 values, a start marker 1, two chest samples, 25 PPG samples and an end marker 1, every 0.25 s; and SPO2= value, valid flag after every 100 PPG samples." width="100%">
 </p>
+<p align="center"><sub><b>Figure 6.</b> Serial frame sent by the firmware every 0.25 s, and the SpO₂ line sent once a second.</sub></p>
 
 ```
 Buffer: 1, az0, az1, red0, red1, ..., red24, 1    every 0.25 s

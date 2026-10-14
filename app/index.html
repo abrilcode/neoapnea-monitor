@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeoApnea Monitor</title>
   <meta name="description" content="Open-source apnea monitor for preterm infants. Runs in the browser with a built-in simulator, or reads the Arduino over Web Serial.">
-  <meta name="theme-color" content="#07090d">
+  <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="brand.css">
   <link rel="stylesheet" href="styles.css">
@@ -14,12 +14,16 @@
 <body>
   <header class="top">
     <a class="brand" href="https://github.com/abrilcode/neoapnea-monitor" title="NeoApnea Monitor on GitHub">
-      <img src="mark.svg" alt="" width="30" height="30"><span class="word">neoapnea<small>monitor</small></span>
+      <img src="mark.svg" alt="" width="34" height="34">
+      <span class="word"><b>NeoApnea Monitor</b><small>Neonatal apnea detection · research prototype</small></span>
     </a>
 
-    <div class="segmented" role="group" aria-label="Signal source">
-      <button type="button" data-source="demo" aria-pressed="true">Simulator</button>
-      <button type="button" data-source="serial" aria-pressed="false">Arduino</button>
+    <div class="source">
+      <span class="eyebrow">Source</span>
+      <div class="segmented" role="group" aria-label="Signal source">
+        <button type="button" data-source="demo" aria-pressed="true">Simulator</button>
+        <button type="button" data-source="serial" aria-pressed="false">Arduino</button>
+      </div>
     </div>
 
     <div class="controls" id="demo-controls">
@@ -42,7 +46,7 @@
 
     <div class="spacer"></div>
 
-    <div class="elapsed" title="Time monitored"><span class="eyebrow">Monitored</span><span id="elapsed">00:00:00</span></div>
+    <div class="meta" title="Time monitored"><span class="eyebrow">Recording</span><span id="elapsed">00:00:00</span></div>
     <button type="button" class="ghost" id="sound" aria-pressed="false">Sound off</button>
     <button type="button" class="patient" id="patient-button">
       <span class="eyebrow">Patient</span><span id="patient-name">None</span>
@@ -57,7 +61,7 @@
       <span class="eyebrow">Heart rate</span><span class="alarm-text">Waiting for signal</span>
     </div>
     <div class="alarm" id="alarm-spo2" data-level="idle">
-      <span class="eyebrow keep-case">SpO2</span><span class="alarm-text">Waiting for signal</span>
+      <span class="eyebrow keep-case">SpO₂</span><span class="alarm-text">Waiting for signal</span>
     </div>
   </section>
 
@@ -65,18 +69,18 @@
     <section class="panel channel breath">
       <div class="trace">
         <div class="panel-head">
-          <span class="eyebrow"><i class="swatch"></i>Chest motion</span>
+          <span class="title"><i class="tag">A</i>Chest motion</span>
           <span class="hint">MPU-6050 · z axis · 8 samples/s</span>
         </div>
         <div class="canvas-box"><canvas id="chart-chest" aria-label="Chest motion waveform"></canvas></div>
       </div>
       <div class="vitals">
         <div class="vital" id="vital-rr">
-          <span class="eyebrow">Resp</span>
-          <span class="value"><b id="rr">--</b><small>/min</small></span>
+          <span class="eyebrow">Respiratory rate</span>
+          <span class="value"><b id="rr">--</b><small>breaths/min</small></span>
         </div>
         <div class="vital small" id="vital-pause">
-          <span class="eyebrow">Since last breath</span>
+          <span class="eyebrow">Time since last breath</span>
           <span class="value"><b id="pause">--</b><small>s</small></span>
         </div>
       </div>
@@ -85,18 +89,18 @@
     <section class="panel channel pulse">
       <div class="trace">
         <div class="panel-head">
-          <span class="eyebrow"><i class="swatch"></i>Pulse wave</span>
+          <span class="title"><i class="tag">B</i>Photoplethysmogram</span>
           <span class="hint">MAX30102 · red LED · 100 Hz · low-pass 8 Hz</span>
         </div>
         <div class="canvas-box"><canvas id="chart-ppg" aria-label="Pulse waveform"></canvas></div>
       </div>
       <div class="vitals">
         <div class="vital" id="vital-hr">
-          <span class="eyebrow">HR</span>
+          <span class="eyebrow">Heart rate</span>
           <span class="value"><b id="hr">--</b><small>bpm</small></span>
         </div>
         <div class="vital spo2" id="vital-spo2">
-          <span class="eyebrow keep-case">SpO2</span>
+          <span class="eyebrow keep-case">SpO₂</span>
           <span class="value"><b id="spo2">--</b><small>%</small></span>
         </div>
       </div>
@@ -104,15 +108,15 @@
 
     <section class="panel trend">
       <div class="panel-head">
-        <span class="eyebrow">Trend</span>
-        <span class="hint" id="trend-hint">Heart rate and SpO2 every 15 s · red marks are apneas</span>
+        <span class="title"><i class="tag">C</i>Heart rate and SpO₂ trend</span>
+        <span class="hint" id="trend-hint">15 s blocks · shaded bands are apneas</span>
       </div>
       <div class="canvas-box"><canvas id="chart-trend" aria-label="Heart rate and SpO2 trend"></canvas></div>
     </section>
 
     <aside class="panel side">
       <div class="panel-head">
-        <span class="eyebrow">Summary</span>
+        <span class="title"><i class="tag">D</i>Summary</span>
         <div class="segmented small" role="group" aria-label="Summary window" id="window">
           <button type="button" data-min="30" aria-pressed="true">30 min</button>
           <button type="button" data-min="60" aria-pressed="false">1 h</button>
@@ -120,19 +124,26 @@
           <button type="button" data-min="1440" aria-pressed="false">24 h</button>
         </div>
       </div>
-      <div class="tiles">
-        <div class="tile"><span class="eyebrow">Apneas</span><b id="sum-apneas">0</b></div>
-        <div class="tile"><span class="eyebrow">Longest pause</span><b><span id="sum-pause">--</span><small>s</small></b></div>
-        <div class="tile"><span class="eyebrow">Lowest <span class="keep-case">SpO2</span></span><b><span id="sum-spo2">--</span><small>%</small></b></div>
-        <div class="tile"><span class="eyebrow">Heart rate</span><b><span id="sum-hr">--</span><small>bpm</small></b></div>
-      </div>
+      <table class="stats">
+        <tbody>
+          <tr><th>Apneas</th><td><b id="sum-apneas">0</b><small>n</small></td></tr>
+          <tr><th>Longest pause</th><td><b id="sum-pause">--</b><small>s</small></td></tr>
+          <tr><th>Lowest <span class="keep-case">SpO₂</span></th><td><b id="sum-spo2">--</b><small>%</small></td></tr>
+          <tr><th>Heart rate range</th><td><b id="sum-hr">--</b><small>bpm</small></td></tr>
+        </tbody>
+      </table>
 
       <div class="panel-head episodes-head">
-        <span class="eyebrow">Episodes</span>
+        <span class="title sub">Episodes</span>
         <span class="hint" id="episodes-scope">This session</span>
       </div>
-      <ol class="episodes" id="episodes"></ol>
-      <p class="empty" id="episodes-empty">Pauses longer than 20 s are listed here when breathing resumes.</p>
+      <div class="episodes-box">
+        <table class="episodes">
+          <thead><tr><th>#</th><th>Start</th><th>Pause</th><th>HR</th><th>SpO₂ min</th></tr></thead>
+          <tbody id="episodes"></tbody>
+        </table>
+        <p class="empty" id="episodes-empty">Pauses longer than 20 s are listed here when breathing resumes.</p>
+      </div>
 
       <div class="export">
         <button type="button" class="ghost" id="export-csv">Export CSV</button>
@@ -142,8 +153,8 @@
   </main>
 
   <footer class="foot">
-    <span>Research prototype. Not a medical device; do not use it to monitor a patient.</span>
-    <a href="https://github.com/abrilcode/neoapnea-monitor">Source and hardware on GitHub</a>
+    <span>Research prototype. Not a medical device; do not use it to monitor a patient. Alarm limits: apnea after 20 s without a breath, heart rate below 100 or above 180 bpm, SpO₂ below 80 %.</span>
+    <a href="https://github.com/abrilcode/neoapnea-monitor">Methods, source and hardware</a>
   </footer>
 
   <dialog id="patient-dialog">
